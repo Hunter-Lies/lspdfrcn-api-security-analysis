@@ -197,6 +197,8 @@ Security research validity does not depend on the researcher's identity. Code be
 
 | Property | Value |
 |----------|-------|
+| Version
+| Version | 1.0.1.4
 | File Size | 693,760 bytes |
 | .NET Metadata Version | v4.0.30319 |
 | PE Architecture | x64 |

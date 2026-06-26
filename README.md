@@ -197,6 +197,8 @@ internal class HybridEncryptedResult
 
 | 属性 | 值 |
 |------|-----|
+| 版本
+| 版本 | 1.0.1.4
 | 文件大小 | 693,760 字节 |
 | .NET 元数据版本 | v4.0.30319 |
 | PE 架构 | x64 |
