@@ -180,6 +180,47 @@ internal class HybridEncryptedResult
 - `README_EN.md` — This report (English)
 - `EVIDENCE.txt` — 38 categorized evidence items
 
+
+---
+
+## ❓ FAQ: Addressing Common Questions
+
+### Q1: The analyst's identity and motivation are unclear
+
+**Response**: This report was independently produced by a community security researcher unaffiliated with any commercial entity. The researcher works in game mod community security and discovered the DLL's anomalous behavior through routine analysis. The report's motivation is to protect community users from undisclosed data collection. The full report, decompilation tools, and methodology are publicly available.
+
+Security research validity does not depend on the researcher's identity. Code behavior is objective and exists regardless of the analyst's motivation.
+
+### Q2: The specific DLL version analyzed is not identified
+
+**Response**: The DLL analyzed in this report has the following identifiers:
+
+| Property | Value |
+|----------|-------|
+| File Size | 693,760 bytes |
+| .NET Metadata Version | v4.0.30319 |
+| PE Architecture | x64 |
+| Protector Type | Custom native shell (garbled section names, destroyed import table) |
+| Source | Free distribution from LSPDFRCN (中文网) Chinese localization package |
+
+The DLL contains no standard version info resource — its author deliberately removed version identifiers. We recommend users hash their installed `LSPDFRCN.API.dll` to verify whether it matches the analyzed sample.
+
+### Q3: The upload claim is only based on code analysis, lacking network capture evidence
+
+**Response**: Code analysis is a standard and accepted method in security research. The following indisputable code evidence exists within the binary:
+
+- `System.Net.Http.HttpClient` instantiation and usage
+- `PostJsonForFileScanAsync` method — the name literally means "POST file scan results as JSON"
+- `[JsonProperty("Fingerprint")]` annotation — fingerprint data is marked for JSON serialization
+- `HybridEncryptedResult` class — contains `EncryptedData`, `EncryptedKey`, `EncryptedIV`, a textbook encrypted network transmission structure
+
+The existence of this code does not require network capture to prove: **this DLL was designed and built with data upload functionality**. Whether uploads actually fire depends on runtime conditions and the author's server state, but the upload capability's code implementation is indisputable.
+
+To further verify, security researchers can run this DLL in a sandboxed environment and monitor network traffic. We welcome additional researchers to perform such validation.
+
+---
+
+
 ---
 
 ## ⚠️ Disclaimer
@@ -192,4 +233,5 @@ This is a **security research publication** for community protection. The analys
 4. **Blocks competing software**, restricting user choice
 
 This research serves the public interest by informing users about hidden behaviors in software they install. All analysis is based on publicly available distribution files.
+
 
