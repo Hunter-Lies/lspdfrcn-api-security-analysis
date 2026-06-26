@@ -2,7 +2,7 @@
 
 ## 隱藏於遊戲模組依賴中的惡意行為
 
-> [简体中文](README.md) | [English](README_EN.md) | [English](README_EN.md)
+> [简体中文](README.md) | [English](README_EN.md)
 
 ---
 
@@ -193,4 +193,5 @@ internal class HybridEncryptedResult
 4. **封鎖**競品軟體，限制使用者選擇
 
 本研究的目的在於告知使用者其所安裝軟體中的隱藏行為，服務於公共利益。所有分析均基於公開可獲得的散佈檔案。
+
 
