@@ -2,7 +2,7 @@
 
 ## Hidden Malware Behavior in a Game Mod Dependency
 
-> [中文版](README.md)
+> [简体中文](README.md) | [繁體中文](README_TW.md)
 
 ---
 
@@ -176,7 +176,7 @@ internal class HybridEncryptedResult
 
 ## 📁 Repository Contents
 
-- `README.md` — Full Chinese version report
+- `README.md` — Full Simplified Chinese version
 - `README_EN.md` — This report (English)
 - `EVIDENCE.txt` — 38 categorized evidence items
 
@@ -192,3 +192,4 @@ This is a **security research publication** for community protection. The analys
 4. **Blocks competing software**, restricting user choice
 
 This research serves the public interest by informing users about hidden behaviors in software they install. All analysis is based on publicly available distribution files.
+

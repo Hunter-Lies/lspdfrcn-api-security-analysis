@@ -2,7 +2,7 @@
 
 ## 隐藏于游戏模组依赖中的恶意行为
 
-> [English version](README_EN.md)
+> [繁體中文](README_TW.md) | [English](README_EN.md)
 
 ---
 
@@ -178,7 +178,7 @@ internal class HybridEncryptedResult
 
 - `README.md` — 本报告（中文版）
 - `README_EN.md` — 完整英文版报告
-- `EVIDENCE.txt` — 38条分类证据清单
+- `EVIDENCE.txt` — 38條分類證據清單
 
 ---
 
@@ -192,3 +192,4 @@ internal class HybridEncryptedResult
 4. **封锁**竞品软件，限制用户选择
 
 本研究的目的是告知用户其所安装软件中的隐藏行为，服务于公共利益。所有分析均基于公开可获得的分发文件。
+
