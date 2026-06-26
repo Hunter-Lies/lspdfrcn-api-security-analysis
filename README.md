@@ -8,20 +8,23 @@
 
 ## 📋 概述
 
-**文件名称**: `LSPDFRCN.API.dll`  
-**声称用途**: "汉化前置库，内含各种实用方法"  
-**实际行为**: 秘密扫描用户文件、采集设备指纹、上传数据至远程服务器、封锁竞品插件  
+**文件名称**：`LSPDFRCN.API.dll`  
+**分析版本**：`1.0.1.4`  
+**文件大小**：693,760 字节  
+**架构**：x64 | .NET v4.0.30319  
+**来源**：中文网（LSPDFRCN）免费分发的汉化前置包  
+**声称用途**："汉化前置库，内含各种实用方法"  
+**实际行为**：秘密扫描用户文件、采集设备指纹、上传数据至远程服务器、封锁竞品插件  
 
-本报告通过逆向工程揭露 `LSPDFRCN.API.dll` 的隐藏恶意行为。该文件由中文网（LSPDFRCN）作为免费模组依赖分发，作者声称其为无害的汉化前置库。我们的分析证明了事实并非如此。
+本报告通过逆向工程揭露 `LSPDFRCN.API.dll` 的隐藏恶意行为。该文件由中文网（LSPDFRCN）作为免费模组依赖分发。作者声称其为无害的汉化前置库，但分析证明其包含多项未经披露的恶意功能。
 
 ---
 
 ## 🚨 主要发现
 
 ### 1. 磁盘扫描
-该 DLL 实现了文件扫描接口，在用户不知情、未同意的情况下枚举游戏目录中的所有文件。
+在用户不知情、未同意的情况下列举游戏目录文件。
 
-**反编译代码**:
 ```csharp
 // LSPDFRCN.Core.FileScanning.IGameDirectoryScanner
 internal interface IGameDirectoryScanner
@@ -30,100 +33,62 @@ internal interface IGameDirectoryScanner
 }
 ```
 
-- `C25CAE07` 类实现了此扫描器
+- `C25CAE07` 类实现此扫描器
 - 记录 `IsScanning` 状态和 `LastScanTime` 时间戳
-- 扫描过程对用户完全不可见
-- 用户协议中从未提及任何扫描行为
+- 扫描过程对用户完全不可见，用户协议中从未提及
 
 ### 2. 设备指纹采集
-该 DLL 包含多个设备 ID 采集组件，收集用户硬件的唯一标识符。
+收集用户硬件的唯一标识符，包含 **7 种以上** `IDeviceIdComponent` 实现。
 
-**反编译代码**:
 ```csharp
 [JsonProperty("Fingerprint")]
 public string Fingerprint { get; }
 ```
 
-- **7种以上** `IDeviceIdComponent` 的实现类
-- `IDeviceIdFormatter` 将采集数据组装为完整指纹
-- 采集内容包括：硬件标识、操作系统版本、安装信息
-- 使用 `JsonProperty` 标注，说明指纹数据以 JSON 格式序列化
+采集内容包括：硬件标识、操作系统版本、安装信息。使用 `JsonProperty` 标注，以 JSON 格式序列化用于上传。
 
-涉及的实现类：
-- `B2A3ABC2` - IDeviceIdComponent
-- `B5647371` - IDeviceIdComponent  
-- `BC1C652` - IDeviceIdComponent
-- `C8F66F8` - IDeviceIdComponent
-- `CD318334` - IDeviceIdComponent
-- `EA27863` - IDeviceIdComponent
-- `D754ADE6` - IDeviceIdFormatter (组装指纹)
+### 3. 数据上传至远程服务器
+扫描结果和设备指纹通过 HTTP POST 上传。
 
-### 3. 数据外泄至远程服务器
-扫描结果和设备指纹通过 HTTP POST 请求上传至远程服务器。
-
-**反编译代码**:
 ```csharp
-// D3E29407 - PostJsonForFileScanAsync
+// PostJsonForFileScanAsync — 将扫描数据以 JSON 格式 POST 发送
 _003CPostJsonForFileScanAsync_003Ed__3 : IAsyncStateMachine
-[AsyncStateMachine(typeof(_003CPostJsonForFileScanAsync_003Ed__3))]
 ```
 
-- 使用 `System.Net.Http.HttpClient` 进行网络请求
-- 上传内容包括：文件扫描结果、设备指纹、注册表数据
-- **用户完全不知情，没有任何提示或同意流程**
-- 使用异步状态机（`IAsyncStateMachine`）在后台静默运行
+- 使用 `System.Net.Http.HttpClient`
+- 上传文件扫描结果、设备指纹、注册表数据
+- 后台异步静默运行，用户无任何提示
 
 ### 4. 竞品插件封锁
-该 DLL 内置了检测和封锁其他插件的机制。
+检测并禁用其他中文汉化插件。
 
-**反编译代码**:
 ```csharp
 public extern bool IsBlocked { get; }
 ```
 
-- `A339C28A` 类包含 `IsBlocked` 属性
-- `D7EC65E0` 类同样包含 `IsBlocked` 属性  
-- 可以阻止竞争的中文汉化插件正常运行
-- 强制用户只能使用中文网生态内的产品
+`A339C28A` 和 `D7EC65E0` 类均包含此属性，强制用户只能使用中文网生态内的产品。
 
-### 5. 注册表访问
-该 DLL 读取 Windows 系统注册表，此行为从未向用户披露。
+### 5. 注册表读取
+读取 Windows 系统注册表，从未向用户披露。
 
-**反编译代码**:
 ```csharp
 using RegistryKey registryKey = Registry.LocalMachine.OpenSubKey(P_0, writable: false);
-if (registryKey == null)
-{
-    ...
-}
 object value = registryKey.GetValue(P_1);
 ```
 
-- 访问 `Registry.LocalMachine`（本地机器注册表）
-- 读取系统配置数据
-- 在用户协议中完全未提及
-
 ### 6. 远程代码下载与执行
-该 DLL 可以从远程服务器下载并加载代码。
-
-- `DownloadPluginManifestAsync` — 下载插件清单文件
+- `DownloadPluginManifestAsync` — 下载插件清单
 - `DownloadPluginAsync` — 下载插件本体
-- `VerifyPluginHashAsync` — 验证文件哈希（可用于完整性校验或反篡改检测）
-- `NeedsDownloadAsync` — 检查是否有新版本需要下载
+- `VerifyPluginHashAsync` — 哈希验证
+- `NeedsDownloadAsync` — 检查更新
 
 ### 7. 加密通信
-使用混合加密方案混淆与远程服务器的通信流量。
+使用 AES 加密混淆 C2 流量。
 
-**反编译代码**:
 ```csharp
-// AES 解密流
 CryptoStream cryptoStream = new CryptoStream(
-    memoryStream, 
-    rijndael.CreateDecryptor(), 
-    CryptoStreamMode.Write
-);
+    memoryStream, rijndael.CreateDecryptor(), CryptoStreamMode.Write);
 
-// 混合加密结果
 internal class HybridEncryptedResult
 {
     public string EncryptedData { get; }
@@ -132,10 +97,6 @@ internal class HybridEncryptedResult
 }
 ```
 
-- 使用 `Rijndael`（AES）对称加密
-- `HybridEncryptedResult` 类包含加密数据、密钥和初始化向量
-- 数据外泄流量经过加密，难以被防火墙检测
-
 ---
 
 ## 🔬 技术摘要
@@ -143,25 +104,18 @@ internal class HybridEncryptedResult
 | 类别 | 关键类/方法 | 恶意行为 |
 |------|------------|---------|
 | 扫描 | `IGameDirectoryScanner.Scan()` | 枚举游戏目录文件 |
-| 指纹 | `IDeviceIdComponent` (7种) | 采集硬件和操作系统指纹 |
+| 指纹 | `IDeviceIdComponent`（7种）| 采集硬件和操作系统指纹 |
 | 上传 | `PostJsonForFileScanAsync` | HTTP POST 上传扫描结果 |
 | 封锁 | `IsBlocked` 属性 | 禁用竞品插件 |
 | 注册表 | `Registry.LocalMachine.OpenSubKey` | 读取系统注册表 |
 | 下载 | `DownloadPluginManifestAsync` | 远程代码加载 |
 | 加密 | `HybridEncryptedResult` + `Rijndael` | C2 通信流量混淆 |
 
----
-
-## 📊 分析统计
-
-| 项目 | 数量 |
-|------|------|
-| 反编译C#源文件 | 108 个 |
-| 可读类定义 | 132 个 |
-| 混淆类定义 | 57 个 |
-| 恶意证据条目 | 38 条 |
-| 设备指纹实现 | 7+ 类 |
-| 扫描/上传方法 | 5+ 个 |
+| 统计项 | 数量 |
+|--------|------|
+| 反编译 C# 源文件 | 108 |
+| 可读类定义 | 132 |
+| 恶意证据条目 | 38 |
 
 ---
 
@@ -169,71 +123,21 @@ internal class HybridEncryptedResult
 
 | 日期 | 事件 |
 |------|------|
-| 2026-06 | 逆向工程分析开始 |
-| 2026-06-27 | 安全分析报告公开发布 |
-
----
-
-## 📁 仓库内容
-
-- `README.md` — 本报告（中文版）
-- `README_EN.md` — 完整英文版报告
-- `EVIDENCE.txt` — 38條分類證據清單
-
+| 2026-06 | 逆向工程分析 |
+| 2026-06-27 | 安全报告公开发布 |
 
 ---
 
 ## ❓ 常见质疑与回应
 
-### 质疑一：分析者身份和动机不明
+**Q: 分析者身份和动机？**  
+本报告由社区安全研究者独立完成，与任何商业实体无关。安全研究的有效性不取决于研究者身份，代码行为是客观事实。
 
-**回应**：本报告由社区安全研究者独立完成，与任何商业实体无关。研究者从事游戏模组社区安全工作，发现该 DLL 的行为异常后进行逆向分析。报告的动机是保护社区用户免受未披露的数据收集行为侵害。报告全文、反编译工具及方法论均公开可查。
-
-安全研究不因研究者身份而改变事实。代码行为是客观存在的，不随分析者的动机而转移。
-
-### 质疑二：未指明分析的 DLL 版本
-
-**回应**：本报告分析的 DLL 文件标识信息如下：
-
-| 属性 | 值 |
-|------|-----|
-| 版本
-| 版本 | 1.0.1.4
-| 文件大小 | 693,760 字节 |
-| .NET 元数据版本 | v4.0.30319 |
-| PE 架构 | x64 |
-| 保护器类型 | 自定义原生壳（段名损坏、导入表销毁） |
-| 来源 | 中文网（LSPDFRCN）免费分发的汉化前置包 |
-
-该 DLL 未包含标准版本信息资源，其作者刻意移除了版本标识。我们建议用户自行对已安装的 `LSPDFRCN.API.dll` 进行哈希校验以确认是否为同一文件。
-
-### 质疑三：上传行为仅基于代码分析，缺乏网络抓包证据
-
-**回应**：代码分析是安全研究的标准方法。文件中明确存在以下无可辩驳的代码证据：
-
-- `System.Net.Http.HttpClient` 的实例化和使用
-- `PostJsonForFileScanAsync` 方法——名称直接表明"将文件扫描结果以 JSON 格式 POST 发送"
-- `[JsonProperty("Fingerprint")]` 标注——设备指纹数据被标记为 JSON 序列化
-- `HybridEncryptedResult` 类——包含 `EncryptedData`、`EncryptedKey`、`EncryptedIV`，这是典型的加密网络传输结构
-
-以上代码的存在不需要网络抓包即可证明：**该 DLL 设计并实现了数据上传功能**。是否实际触发了上传取决于运行环境和作者的服务端状态，但上传能力的代码实现是确定无疑的。
-
-要进一步验证，安全研究人员可以在沙箱环境中运行该 DLL 并监控网络流量。我们欢迎更多研究者进行此类验证。
-
----
-
+**Q: 上传行为只有代码分析，缺乏网络抓包证据？**  
+代码分析是安全研究的标准方法。`PostJsonForFileScanAsync`（以JSON POST发送文件扫描结果）、`HttpClient`、`HybridEncryptedResult`（加密数据结构）的存在，本身就是上传功能已被设计实现的确定证据。欢迎其他研究者进行网络抓包验证。
 
 ---
 
 ## ⚠️ 免责声明
 
-这是为保护社区而发布的**安全研究出版物**。分析针对的是公开分发的免费模组依赖项，该依赖项：
-
-1. **未披露**其数据收集行为
-2. **未经同意**读取用户文件和注册表
-3. **向远程服务器上传**用户数据
-4. **封锁**竞品软件，限制用户选择
-
-本研究的目的是告知用户其所安装软件中的隐藏行为，服务于公共利益。所有分析均基于公开可获得的分发文件。
-
-
+本研究服务于公共利益，告知用户其所安装软件中的未披露行为。分析基于公开可获得的分发文件。
